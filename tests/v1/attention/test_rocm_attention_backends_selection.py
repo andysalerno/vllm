@@ -304,13 +304,13 @@ def test_mla_backend_selection(
             assert backend_path == expected_backend_path
 
 
-def test_aiter_fa_requires_supported_arch(mock_vllm_config):
-    """Test that ROCM_AITER_FA rejects unsupported ROCm architectures."""
+def test_aiter_fa_requires_mi3xx(mock_vllm_config):
+    """Test that ROCM_AITER_FA requires mi3xx architecture."""
     from vllm.platforms.rocm import RocmPlatform
 
+    # Mock on_mi3xx to return False (used by supports_compute_capability)
     with (
         patch("vllm.platforms.rocm.on_mi3xx", return_value=False),
-        patch("vllm.platforms.rocm.on_gfx12x", return_value=False),
         pytest.raises(
             ValueError,
             match="compute capability not supported",
@@ -330,49 +330,6 @@ def test_aiter_fa_requires_supported_arch(mock_vllm_config):
             selected_backend=AttentionBackendEnum.ROCM_AITER_FA,
             attn_selector_config=attn_selector_config,
         )
-
-
-def test_aiter_fa_supports_gfx12x(mock_vllm_config):
-    """Test that ROCM_AITER_FA can be selected on gfx12x/RDNA4."""
-    from vllm.platforms.rocm import RocmPlatform
-
-    with (
-        patch("vllm.platforms.rocm.on_mi3xx", return_value=False),
-        patch("vllm.platforms.rocm.on_gfx12x", return_value=True),
-    ):
-        attn_selector_config = AttentionSelectorConfig(
-            head_size=128,
-            dtype=torch.float16,
-            kv_cache_dtype="auto",
-            block_size=16,
-            use_mla=False,
-            has_sink=False,
-            use_sparse=False,
-        )
-
-        backend_path = RocmPlatform.get_attn_backend_cls(
-            selected_backend=AttentionBackendEnum.ROCM_AITER_FA,
-            attn_selector_config=attn_selector_config,
-        )
-
-    assert backend_path == AttentionBackendEnum.ROCM_AITER_FA.get_path()
-
-
-def test_vit_aiter_fa_supports_gfx12x(mock_vllm_config):
-    """Test that ViT can use AITER Flash Attention on gfx12x/RDNA4."""
-    from vllm.platforms.rocm import RocmPlatform
-
-    with (
-        patch("vllm._aiter_ops.rocm_aiter_ops.is_enabled", return_value=True),
-        patch("vllm.platforms.rocm.on_mi3xx", return_value=False),
-        patch("vllm.platforms.rocm.on_gfx12x", return_value=True),
-    ):
-        backend = RocmPlatform.get_vit_attn_backend(
-            head_size=128,
-            dtype=torch.float16,
-        )
-
-    assert backend == AttentionBackendEnum.ROCM_AITER_FA
 
 
 def test_sparse_not_supported(mock_vllm_config):

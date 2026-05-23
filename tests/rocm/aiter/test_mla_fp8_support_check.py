@@ -7,58 +7,9 @@ These tests verify that the _check_aiter_mla_fp8_support() function
 correctly handles various error conditions without crashing.
 """
 
-import sys
-from types import ModuleType
 from unittest.mock import patch
 
 import pytest
-
-
-def _fake_rocm_module(*, on_mi3xx: bool, on_gfx12x: bool) -> ModuleType:
-    module = ModuleType("vllm.platforms.rocm")
-    module.on_mi3xx = lambda: on_mi3xx
-    module.on_gfx12x = lambda: on_gfx12x
-    return module
-
-
-def test_aiter_supports_gfx12x():
-    """Test that AITER is considered available on gfx12x/RDNA4."""
-    from vllm._aiter_ops import is_aiter_found_and_supported
-
-    with (
-        patch("vllm._aiter_ops.IS_AITER_FOUND", True),
-        patch("vllm._aiter_ops.current_platform.is_rocm", return_value=True),
-        patch.dict(
-            sys.modules,
-            {
-                "vllm.platforms.rocm": _fake_rocm_module(
-                    on_mi3xx=False,
-                    on_gfx12x=True,
-                )
-            },
-        ),
-    ):
-        assert is_aiter_found_and_supported() is True
-
-
-def test_aiter_rejects_unsupported_rocm_arch():
-    """Test that AITER remains disabled on unsupported ROCm architectures."""
-    from vllm._aiter_ops import is_aiter_found_and_supported
-
-    with (
-        patch("vllm._aiter_ops.IS_AITER_FOUND", True),
-        patch("vllm._aiter_ops.current_platform.is_rocm", return_value=True),
-        patch.dict(
-            sys.modules,
-            {
-                "vllm.platforms.rocm": _fake_rocm_module(
-                    on_mi3xx=False,
-                    on_gfx12x=False,
-                )
-            },
-        ),
-    ):
-        assert is_aiter_found_and_supported() is False
 
 
 class TestAiterMlaFp8SupportCheck:
