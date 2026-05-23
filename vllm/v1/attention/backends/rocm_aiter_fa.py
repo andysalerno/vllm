@@ -1222,7 +1222,11 @@ class AiterFlashAttentionImpl(AttentionImpl):
                 # fall back to the unified_attention triton kernel which
                 # handles both correctly.
                 _MIN_HEAD_SIZE_FOR_LL4MI = 64
-                use_unified_attention = self.head_size < _MIN_HEAD_SIZE_FOR_LL4MI
+                from vllm.platforms.rocm import on_gfx12x
+
+                use_unified_attention = (
+                    self.head_size < _MIN_HEAD_SIZE_FOR_LL4MI or on_gfx12x()
+                )
 
                 if use_unified_attention:
                     assert not rocm_aiter_ops.is_shuffle_kv_cache_enabled(), (
