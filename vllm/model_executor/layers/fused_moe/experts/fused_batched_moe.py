@@ -759,8 +759,16 @@ class BatchedTritonExperts(mk.FusedMoEExpertsModular):
         weight_key: QuantKey | None,
         activation_key: QuantKey | None,
     ) -> bool:
-        device_supports_fp8 = (
-            current_platform.is_cuda_alike() and current_platform.supports_fp8()
+        p = current_platform
+        if p.is_rocm():
+            from vllm.platforms.rocm import on_gfx12x, on_gfx9
+
+            is_rocm_on_gfx9_or_gfx12x = on_gfx9() or on_gfx12x()
+        else:
+            is_rocm_on_gfx9_or_gfx12x = False
+
+        device_supports_fp8 = is_rocm_on_gfx9_or_gfx12x or (
+            p.is_cuda() and p.has_device_capability((8, 9))
         )
 
         supported: list[tuple[QuantKey | None, QuantKey | None]] = [(None, None)]
