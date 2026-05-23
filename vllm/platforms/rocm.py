@@ -594,7 +594,7 @@ class RocmPlatform(Platform):
 
         from vllm._aiter_ops import rocm_aiter_ops
 
-        if rocm_aiter_ops.is_enabled() and on_gfx9():
+        if rocm_aiter_ops.is_enabled() and (on_mi3xx() or on_gfx12x()):
             logger.info_once("Using AITER Flash Attention backend for ViT model.")
             return AttentionBackendEnum.ROCM_AITER_FA
 

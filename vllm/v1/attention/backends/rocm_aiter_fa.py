@@ -769,12 +769,12 @@ class AiterFlashAttentionBackend(AttentionBackend):
 
     @classmethod
     def supports_compute_capability(cls, capability: DeviceCapability) -> bool:
-        from vllm.platforms.rocm import on_mi3xx
+        from vllm.platforms.rocm import on_gfx12x, on_mi3xx
 
         # DeviceCapability is currently created using torch.cuda.get_device_capability()
-        # which is known to be buggy on rocm systems. on_mi3xx uses amd-smi which is
-        # more reliable.
-        return on_mi3xx()
+        # which is known to be buggy on rocm systems. These helpers use the cached
+        # GCN arch from ROCm, which is more reliable.
+        return on_mi3xx() or on_gfx12x()
 
     @classmethod
     def supports_non_causal(cls) -> bool:

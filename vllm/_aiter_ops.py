@@ -66,7 +66,7 @@ class AiterCustomAllreduceProto(Protocol):
 def is_aiter_found_and_supported() -> bool:
     """Check if AITER library is available and platform supports it.
 
-    Checks: platform (ROCm), device arch (gfx9), and library existence.
+    Checks: platform (ROCm), supported device arch, and library existence.
     Does NOT check environment variables - that's handled by rocm_aiter_ops.is_enabled().
 
     This function determines if aiter CAN be used, not if it SHOULD be used.
@@ -80,9 +80,9 @@ def is_aiter_found_and_supported() -> bool:
     VLLM_ROCM_USE_AITER=0, while preventing unwanted JIT warnings for auto-discovery.
     """
     if current_platform.is_rocm() and IS_AITER_FOUND:
-        from vllm.platforms.rocm import on_mi3xx
+        from vllm.platforms.rocm import on_gfx12x, on_mi3xx
 
-        return on_mi3xx()
+        return on_mi3xx() or on_gfx12x()
     return False
 
 
@@ -111,7 +111,7 @@ def _check_kernel_tuned(N: int, K: int, q_dtype_w: torch.dtype, csv_path: str) -
 
 def if_aiter_supported(func: Callable) -> Callable:
     """Decorator that only executes the function if
-    ROCm AITER package is supported and enabled on gfx9 archs.
+    ROCm AITER package is available on a supported architecture.
     """
 
     @functools.wraps(func)
@@ -1226,7 +1226,7 @@ class rocm_aiter_ops:
 
     This class centralizes the import and registration of AITER ops,
     and provides a unified interface for checking if AITER is enabled.
-    Operations are only available on supported gfx9
+    Operations are only available on supported MI3xx or gfx12x
     architectures when aiter is installed.
 
     The class uses environment variables to control which features are enabled,
@@ -1257,12 +1257,12 @@ class rocm_aiter_ops:
 
     Check Functions:
         All check functions (is_*_enabled) are decorated with @if_aiter_supported,
-        which verifies: (1) platform is ROCm, (2) device arch is gfx9, and
+        which verifies: (1) platform is ROCm, (2) device arch supports AITER, and
         (3) aiter library is installed. The check function then also verifies
         the corresponding environment variable is enabled.
         i.e.                                             ___
         is_enabled() == current_platform.is_rocm() and      |     checked by
-                        current_platform.is_on_gfx9() and   | @if_aiter_supported
+                        device arch supports AITER and       | @if_aiter_supported
                         IS_AITER_FOUND and   _______________|
                         cls._AITER_ENABLED   -----> Check by the logic in `is_enabled()`
 
