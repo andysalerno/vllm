@@ -1196,7 +1196,7 @@ class AiterFlashAttentionImpl(AttentionImpl):
                         # Non-uniform query lengths can appear in real serving
                         # traffic (e.g. mixed datasets). Fall back to varlen
                         # unified_attention instead of asserting.
-                        from aiter.ops.triton.unified_attention import (
+                        from aiter.ops.triton.attention.unified_attention import (
                             unified_attention,
                         )
 
@@ -1245,7 +1245,7 @@ class AiterFlashAttentionImpl(AttentionImpl):
                         "unified_attention fallback with shuffle layout "
                         "is not supported yet."
                     )
-                    from aiter.ops.triton.unified_attention import (
+                    from aiter.ops.triton.attention.unified_attention import (
                         unified_attention,
                     )
 

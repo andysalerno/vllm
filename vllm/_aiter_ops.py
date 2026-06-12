@@ -1626,6 +1626,15 @@ class rocm_aiter_ops:
 
     @classmethod
     @if_aiter_supported
+    def is_sampler_enabled(cls) -> bool:
+        from vllm.platforms.rocm import on_mi3xx
+
+        # AITER's sampler JIT does not support gfx12x/RDNA4, even though
+        # other AITER paths such as unified attention can run there.
+        return cls._AITER_ENABLED and on_mi3xx()
+
+    @classmethod
+    @if_aiter_supported
     def is_linear_enabled(cls) -> bool:
         return cls._AITER_ENABLED and cls._LINEAR_ENABLED
 
